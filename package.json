@@ -1,11 +1,15 @@
 {
   "name": "net-energizer",
   "private": true,
-  "version": "1.0.0",
+  "version": "1.0.1",
   "type": "module",
   "main": "main.cjs",
   "author": "Mohamed Elshenawy",
   "description": "Network Energy Analyzer",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/mo7amedmoh/Energy-Validator.git"
+  },
   "scripts": {
     "dev": "concurrently \"vite\" \"wait-on tcp:5173 && electron . --dev\"",
     "build": "vite build",
