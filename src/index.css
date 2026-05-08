@@ -1,0 +1,109 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Base configuration (Tailwind defaults) */
+    --background: 0 0% 100%;
+    --foreground: 222.2 84% 4.9%;
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 84% 4.9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222.2 84% 4.9%;
+    --primary: 221.2 83.2% 53.3%;
+    --primary-foreground: 210 40% 98%;
+    --secondary: 210 40% 96.1%;
+    --secondary-foreground: 222.2 47.4% 11.2%;
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+    --accent: 210 40% 96.1%;
+    --accent-foreground: 222.2 47.4% 11.2%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 221.2 83.2% 53.3%;
+    --radius: 0.75rem;
+
+    /* Theme: Default Dark (Slate / Midnight Blue) */
+    --premium-50: 210 40% 98%;
+    --premium-100: 210 40% 96.1%;
+    --premium-200: 214.3 31.8% 91.4%;
+    --premium-300: 212.7 26.8% 83.9%;
+    --premium-400: 215 16.3% 65%;
+    --premium-500: 215.4 16.3% 46.9%;
+    --premium-600: 215 19% 35%;
+    --premium-700: 215 25% 27%;
+    --premium-800: 217 33% 17%;
+    --premium-900: 222 47% 11%;
+    --premium-950: 222 84% 5%;
+  }
+
+  [data-theme="default"] {
+    --premium-50: 210 40% 98%;
+    --premium-100: 210 40% 96.1%;
+    --premium-200: 214.3 31.8% 91.4%;
+    --premium-300: 212.7 26.8% 83.9%;
+    --premium-400: 215 16.3% 65%;
+    --premium-500: 215.4 16.3% 46.9%;
+    --premium-600: 215 19% 35%;
+    --premium-700: 215 25% 27%;
+    --premium-800: 217 33% 17%;
+    --premium-900: 222 47% 11%;
+    --premium-950: 222 84% 5%;
+  }
+
+  [data-theme="orange"] {
+    /* Theme: Sunset Orange (Warm Tinted Neutral) */
+    --premium-50: 25 30% 98%;
+    --premium-100: 25 25% 95%;
+    --premium-200: 25 20% 88%;
+    --premium-300: 25 15% 75%;
+    --premium-400: 25 10% 60%;
+    --premium-500: 25 10% 45%;
+    --premium-600: 25 12% 35%;
+    --premium-700: 25 15% 25%;
+    --premium-800: 25 20% 18%;
+    --premium-900: 25 25% 12%;
+    --premium-950: 25 35% 6%;
+  }
+
+  [data-theme="emerald"] {
+    /* Theme: Emerald Green (Cool Tinted Neutral) */
+    --premium-50: 160 30% 98%;
+    --premium-100: 160 25% 95%;
+    --premium-200: 160 20% 88%;
+    --premium-300: 160 15% 75%;
+    --premium-400: 160 10% 60%;
+    --premium-500: 160 10% 45%;
+    --premium-600: 160 12% 35%;
+    --premium-700: 160 15% 25%;
+    --premium-800: 160 20% 18%;
+    --premium-900: 160 25% 12%;
+    --premium-950: 160 35% 6%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-premium-200 dark:border-premium-800 focus-visible:ring-1 focus-visible:ring-premium-400 focus-visible:outline-none;
+  }
+  body {
+    @apply bg-premium-50 text-premium-900 dark:bg-premium-950 dark:text-premium-50 font-sans;
+  }
+}
+
+/* Custom Utilities */
+.glass {
+  @apply bg-white/70 dark:bg-premium-900/70 backdrop-blur-md border border-white/20 dark:border-premium-100/10 shadow-xl;
+}
+
+.premium-gradient {
+  @apply bg-gradient-to-br from-premium-50 to-premium-100 dark:from-premium-900 dark:to-premium-950;
+}
+
+.card-hover {
+  @apply transition-all duration-300 hover:shadow-2xl hover:-translate-y-1;
+}
+
