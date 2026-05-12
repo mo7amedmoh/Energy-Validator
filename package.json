@@ -10,16 +10,19 @@
     "type": "git",
     "url": "https://github.com/mo7amedmoh/Energy-Validator.git"
   },
+  "homepage": "https://mo7amedmoh.github.io/Energy-Validator",
   "scripts": {
-    "dev": "concurrently \"vite\" \"wait-on tcp:5173 && electron . --dev\"",
+    "dev": "vite",
+    "dev:electron": "concurrently \"vite\" \"wait-on tcp:5173 && electron . --dev\"",
     "build": "vite build",
     "clean": "rimraf release dist",
     "electron:build": "npm run clean && vite build && electron-builder",
     "electron:publish": "npm run clean && vite build && electron-builder --publish always",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "predeploy": "npm run build",
+    "deploy": "gh-pages -d dist"
   },
-  "dependencies": {},
   "devDependencies": {
     "@eslint/js": "^9.39.4",
     "@types/react": "^19.2.14",
@@ -36,6 +39,7 @@
     "exceljs": "^4.4.0",
     "firebase": "^12.12.0",
     "framer-motion": "^12.38.0",
+    "gh-pages": "^6.3.0",
     "globals": "^17.4.0",
     "lucide-react": "^1.8.0",
     "postcss": "^8.5.9",
