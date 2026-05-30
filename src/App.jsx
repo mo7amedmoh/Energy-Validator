@@ -68,6 +68,7 @@ import {
 import { parseBDTFile } from "./lib/bdt";
 import BDTPhotoInspector from "./components/BDTPhotoInspector";
 import { correlateBDTWithAlarms } from "./lib/bdtCorrelation";
+import TrialActivation from "./components/TrialActivation";
 
 const Card = ({ children, className = "" }) => (
   <div
@@ -127,6 +128,20 @@ const getShortIssueText = (issue) => {
 
 const App = () => {
   const [siteList, setSiteList] = useState([]);
+
+  // Environment detection: Bypass locks in Electron, enable in Web browser
+  const isElectron = typeof window !== 'undefined' && window.process && window.process.versions && window.process.versions.electron;
+
+  const [trialLockEnabled, setTrialLockEnabled] = useState(() => {
+    if (isElectron) return false;
+    const saved = localStorage.getItem("energy_review_trial_lock_enabled");
+    return saved !== null ? JSON.parse(saved) : true;
+  });
+
+  const [isActivated, setIsActivated] = useState(() => {
+    const saved = localStorage.getItem("energy_review_activated");
+    return saved !== null ? JSON.parse(saved) : false;
+  });
   const [siteListLoading, setSiteListLoading] = useState(true);
   const [siteListError, setSiteListError] = useState(null);
   const [lastSyncTime, setLastSyncTime] = useState(null);
@@ -2502,6 +2517,100 @@ const App = () => {
         </div>
       </Card>
 
+      {/* Security & Licensing Settings */}
+      <Card className="p-10">
+        <div className="flex items-center gap-5 mb-10">
+          <div className="w-14 h-14 bg-blue-500/10 text-blue-500 rounded-2xl flex items-center justify-center shadow-inner animate-pulse">
+            <ShieldCheck size={28} />
+          </div>
+          <div>
+            <h4 className="text-2xl font-black">Security & Access Lock</h4>
+            <p className="text-sm font-medium text-premium-400">
+              Manage software evaluation locks and trial key validations
+            </p>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+          <div className="space-y-4">
+            <h5 className="text-[10px] font-black uppercase tracking-[0.2em] text-premium-500">
+              Web Client Lock Screen
+            </h5>
+            <div className="bg-premium-50 dark:bg-white/5 p-6 rounded-[2rem] border border-premium-100 dark:border-premium-900 space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="flex flex-col pr-4">
+                  <span className="text-xs font-black uppercase tracking-wider mb-1">
+                    Require Trial Key Activation
+                  </span>
+                  <span className="text-[10px] font-bold text-premium-400 leading-normal">
+                    When active, a secure trial screen will lock browser visitors until a valid trial key is entered. (Web version only)
+                  </span>
+                </div>
+                <button
+                  onClick={() => {
+                    const newState = !trialLockEnabled;
+                    setTrialLockEnabled(newState);
+                    localStorage.setItem("energy_review_trial_lock_enabled", JSON.stringify(newState));
+                    if (!newState) {
+                      setIsActivated(true);
+                      localStorage.setItem("energy_review_activated", JSON.stringify(true));
+                    }
+                  }}
+                  className={`w-16 h-8 rounded-full p-1 transition-all duration-300 relative focus:outline-none shrink-0 ${
+                    trialLockEnabled ? "bg-blue-600" : "bg-premium-300 dark:bg-premium-800"
+                  }`}
+                >
+                  <div
+                    className={`w-6 h-6 rounded-full bg-white shadow-md transform transition-all duration-300 ${
+                      trialLockEnabled ? "translate-x-8" : "translate-x-0"
+                    }`}
+                  />
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div className="space-y-4">
+            <h5 className="text-[10px] font-black uppercase tracking-[0.2em] text-premium-500">
+              License Status
+            </h5>
+            <div className="bg-premium-50 dark:bg-white/5 p-6 rounded-[2rem] border border-premium-100 dark:border-premium-900 space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="flex flex-col">
+                  <span className="text-xs font-black uppercase tracking-wider mb-1">
+                    Active License Status
+                  </span>
+                  <span className="text-[10px] font-bold text-premium-400">
+                    Current instance licensing parameters.
+                  </span>
+                </div>
+                <span className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest shrink-0 ${
+                  isActivated ? "bg-emerald-500/10 text-emerald-500" : "bg-amber-500/10 text-amber-500"
+                }`}>
+                  {isActivated ? "Activated (Simulated)" : "Unactivated"}
+                </span>
+              </div>
+              {isActivated && (
+                <div className="pt-2">
+                  <button
+                    onClick={() => {
+                      if (window.confirm("Are you sure you want to deactivate and lock the software trial?")) {
+                        setIsActivated(false);
+                        localStorage.removeItem("energy_review_activated");
+                        alert("Software trial deactivated.");
+                      }
+                    }}
+                    className="text-[10px] font-black text-rose-500 hover:text-rose-400 uppercase tracking-widest"
+                  >
+                    Reset & Lock Trial Again
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      </Card>
+
       {/* BDT Rules Configuration Section */}
       <Card className="p-10">
         <div className="flex items-center justify-between mb-10">
@@ -3858,6 +3967,19 @@ const App = () => {
   };
 
   // BDT Settings Modal removed — settings are now in the Console tab
+
+  if (trialLockEnabled && !isActivated) {
+    return (
+      <TrialActivation
+        onActivate={() => {
+          setIsActivated(true);
+          localStorage.setItem("energy_review_activated", JSON.stringify(true));
+        }}
+        trialLockEnabled={trialLockEnabled}
+        setTrialLockEnabled={setTrialLockEnabled}
+      />
+    );
+  }
 
   return (
     <div className="min-h-screen bg-premium-50 dark:bg-premium-950 text-premium-900 dark:text-premium-50 selection:bg-blue-500/30 overflow-x-hidden">
