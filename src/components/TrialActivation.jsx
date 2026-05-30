@@ -43,7 +43,7 @@ export default function TrialActivation({
   // Key validation rule
   const validateKey = (key) => {
     const cleanKey = key.trim().toUpperCase();
-    if (cleanKey === "ns9z-9szi" || cleanKey === "MOB-ENERGY-FREE") {
+    if (cleanKey === "RovZd2+@24l5!N8$" || cleanKey === "MOB-ENERGY-FREE") {
       return true;
     }
     // Match generated format: NET-TRIAL-XXXX-XXXX
@@ -80,7 +80,7 @@ export default function TrialActivation({
       const randHex = () =>
         Math.random().toString(36).substring(2, 6).toUpperCase();
       // const newKey = `NET-TRIAL-${randHex()}-${randHex()}`;
-      const newKey = `ns9z-9szi`;
+      const newKey = `RovZd2+@24l5!N8$`;
       setGeneratedKey(newKey);
       setRequestLoading(false);
       setView("success");
