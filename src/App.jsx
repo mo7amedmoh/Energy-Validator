@@ -191,6 +191,8 @@ const App = () => {
   const [bdtSummary, setBdtSummary] = useState(null);
   const [oldSummary, setOldSummary] = useState(null);
   const [bdtStatusFilter, setBdtStatusFilter] = useState(null); // null | 'pass' | 'warning' | 'fail'
+  const [bdtSearchQuery, setBdtSearchQuery] = useState("");
+  const [bdtRuleFilter, setBdtRuleFilter] = useState("");
   const [bdtLoading, setBdtLoading] = useState(false);
   const [bdtDragActive, setBdtDragActive] = useState(false);
   const [bdtSummaryDragActive, setBdtSummaryDragActive] = useState(false);
@@ -3227,6 +3229,13 @@ const App = () => {
     }
 
     const allSheets = bdtResults.flatMap((r) => r.sheets);
+    const allIssuesList = Array.from(
+      new Set(
+        allSheets
+          .filter((s) => (s.manualOverride || s.overallStatus) === "fail")
+          .flatMap((s) => s.allIssues.map(getShortIssueText))
+      )
+    ).sort();
     const passCount = allSheets.filter(
       (s) => (s.manualOverride || s.overallStatus) === "pass",
     ).length;
@@ -3532,6 +3541,58 @@ const App = () => {
           </div>
         )}
 
+        {/* Search and Filters Bar */}
+        <Card className="p-6 bg-white dark:bg-premium-900/60 border-2 border-premium-100 dark:border-premium-800 flex flex-col md:flex-row gap-6 items-center">
+          <div className="relative flex-1 w-full">
+            <Search
+              size={18}
+              className="absolute left-4 top-1/2 -translate-y-1/2 text-premium-400"
+            />
+            <input
+              type="text"
+              value={bdtSearchQuery}
+              onChange={(e) => setBdtSearchQuery(e.target.value)}
+              placeholder="Search site code, rejection rule, comment, or sheet name..."
+              className="w-full bg-premium-50 dark:bg-white/5 border border-premium-150 dark:border-premium-800 rounded-2xl pl-12 pr-6 py-4 font-medium text-sm focus:border-indigo-500/50 focus:ring-4 ring-indigo-500/5 outline-none transition-all placeholder:text-premium-400"
+            />
+          </div>
+
+          <div className="flex gap-4 w-full md:w-auto shrink-0 items-center">
+            {/* Rule Selector Filter */}
+            <div className="relative flex-1 md:flex-none">
+              <select
+                value={bdtRuleFilter}
+                onChange={(e) => setBdtRuleFilter(e.target.value)}
+                className="w-full md:w-64 bg-premium-50 dark:bg-white/5 border border-premium-150 dark:border-premium-800 rounded-2xl px-5 py-4 font-black uppercase tracking-wider text-[10px] text-premium-700 dark:text-premium-300 focus:border-indigo-500/50 focus:ring-4 ring-indigo-500/5 outline-none transition-all appearance-none cursor-pointer"
+              >
+                <option value="">Filter by Rejection Rule...</option>
+                {allIssuesList.map((rule, idx) => (
+                  <option key={idx} value={rule}>
+                    {rule}
+                  </option>
+                ))}
+              </select>
+              <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-premium-400">
+                ▼
+              </div>
+            </div>
+
+            {/* Clear Filters Button */}
+            {(bdtSearchQuery.trim() !== "" || bdtRuleFilter !== "" || bdtStatusFilter !== null) && (
+              <button
+                onClick={() => {
+                  setBdtSearchQuery("");
+                  setBdtRuleFilter("");
+                  setBdtStatusFilter(null);
+                }}
+                className="flex items-center gap-2 px-5 py-4 bg-rose-500/10 text-rose-600 dark:text-rose-400 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-rose-500 hover:text-white transition-all active:scale-95"
+              >
+                Clear
+              </button>
+            )}
+          </div>
+        </Card>
+
         {/* Active filter indicator */}
         {bdtStatusFilter && (
           <div className="flex items-center gap-3 animate-fade-in">
@@ -3597,16 +3658,41 @@ const App = () => {
 
         {/* One block per uploaded file */}
         {bdtResults.map((result, fileIdx) => {
-          const filteredSheets = bdtStatusFilter
-            ? result.sheets.filter((s) => {
-                const effective = s.manualOverride || s.overallStatus;
-                if (bdtStatusFilter === "pass") return effective === "pass";
-                if (bdtStatusFilter === "warning")
-                  return !s.manualOverride && s.overallStatus === "warning";
-                if (bdtStatusFilter === "fail") return effective === "fail";
-                return true;
-              })
-            : result.sheets;
+          const filteredSheets = result.sheets.filter((s) => {
+            // 1. Status Filter
+            if (bdtStatusFilter) {
+              const effective = s.manualOverride || s.overallStatus;
+              if (bdtStatusFilter === "pass" && effective !== "pass") return false;
+              if (bdtStatusFilter === "warning" && (s.manualOverride || s.overallStatus !== "warning")) return false;
+              if (bdtStatusFilter === "fail" && effective !== "fail") return false;
+            }
+
+            // 2. Search query filter
+            if (bdtSearchQuery.trim()) {
+              const query = bdtSearchQuery.toLowerCase();
+              const matchesSiteName = s.siteName && s.siteName.toLowerCase().includes(query);
+              const matchesSheetName = s.sheetName && s.sheetName.toLowerCase().includes(query);
+              const matchesSiteCode = s.summaryData?.siteCode && String(s.summaryData.siteCode).toLowerCase().includes(query);
+              
+              const matchesIssues = s.allIssues && s.allIssues.some((iss) => {
+                return (iss.text && iss.text.toLowerCase().includes(query)) ||
+                       (iss.section && iss.section.toLowerCase().includes(query)) ||
+                       getShortIssueText(iss).toLowerCase().includes(query);
+              });
+              
+              if (!matchesSiteName && !matchesSheetName && !matchesSiteCode && !matchesIssues) return false;
+            }
+
+            // 3. Rejection Rule Filter
+            if (bdtRuleFilter) {
+              const matchesRule = s.allIssues && s.allIssues.some((iss) => {
+                return getShortIssueText(iss) === bdtRuleFilter;
+              });
+              if (!matchesRule) return false;
+            }
+
+            return true;
+          });
 
           if (filteredSheets.length === 0) return null;
 
