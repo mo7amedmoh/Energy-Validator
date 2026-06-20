@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import authData from "../config/auth.json";
 import {
   Key,
   Lock,
@@ -25,7 +26,10 @@ export default function TrialActivation({
   setTrialLockEnabled,
 }) {
   const [view, setView] = useState("activate"); // 'activate' | 'request' | 'success'
+  const [loginType, setLoginType] = useState("key"); // 'key' | 'user'
   const [trialKey, setTrialKey] = useState("");
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [copied, setCopied] = useState(false);
   const [generatedKey, setGeneratedKey] = useState("");
@@ -40,29 +44,34 @@ export default function TrialActivation({
   });
   const [requestLoading, setRequestLoading] = useState(false);
 
-  // Key validation rule
-  const validateKey = (key) => {
-    const cleanKey = key.trim().toUpperCase();
-    if (cleanKey === "RovZd2+@24l5!N8$" || cleanKey === "MOB-ENERGY-FREE") {
-      return true;
-    }
-    // Match generated format: NET-TRIAL-XXXX-XXXX
-    const regex = /^NET-TRIAL-[A-Z0-9]{4}-[A-Z0-9]{4}$/;
-    return regex.test(cleanKey);
-  };
-
   const handleActivate = (e) => {
     e.preventDefault();
-    if (!trialKey.trim()) {
-      setError("Please enter a trial key.");
-      return;
-    }
-
-    if (validateKey(trialKey)) {
-      setError("");
-      onActivate();
+    if (loginType === "key") {
+      if (!trialKey.trim()) {
+        setError("Please enter a trial key.");
+        return;
+      }
+      const cleanKey = trialKey.trim().toUpperCase();
+      const isValid = authData.validKeys.some(k => k.toUpperCase() === cleanKey);
+      
+      if (isValid || /^NET-TRIAL-[A-Z0-9]{4}-[A-Z0-9]{4}$/.test(cleanKey)) {
+        setError("");
+        onActivate();
+      } else {
+        setError("Invalid activation key.");
+      }
     } else {
-      setError("Invalid activation key. Please request a new trial key.");
+      if (!username.trim() || !password.trim()) {
+        setError("Please enter username and password.");
+        return;
+      }
+      const user = authData.users.find(u => u.username === username && u.password === password);
+      if (user) {
+        setError("");
+        onActivate();
+      } else {
+        setError("Invalid credentials.");
+      }
     }
   };
 
@@ -154,25 +163,89 @@ export default function TrialActivation({
                 </div>
               )}
 
+              <div className="flex bg-slate-950/60 rounded-2xl p-1 mb-6 border border-white/5">
+                <button
+                  onClick={() => setLoginType("key")}
+                  className={`flex-1 py-3 text-xs font-black uppercase tracking-widest rounded-xl transition-all ${
+                    loginType === "key"
+                      ? "bg-blue-600/20 text-blue-400"
+                      : "text-slate-500 hover:text-slate-300"
+                  }`}
+                >
+                  Key Activation
+                </button>
+                <button
+                  onClick={() => setLoginType("user")}
+                  className={`flex-1 py-3 text-xs font-black uppercase tracking-widest rounded-xl transition-all ${
+                    loginType === "user"
+                      ? "bg-blue-600/20 text-blue-400"
+                      : "text-slate-500 hover:text-slate-300"
+                  }`}
+                >
+                  User Login
+                </button>
+              </div>
+
               <form onSubmit={handleActivate} className="space-y-6">
-                <div className="space-y-2">
-                  <label className="text-[10px] font-black uppercase text-premium-400 tracking-widest pl-1">
-                    Trial License Key
-                  </label>
-                  <div className="relative group">
-                    <input
-                      type="text"
-                      value={trialKey}
-                      onChange={(e) => setTrialKey(e.target.value)}
-                      placeholder="NET-TRIAL-XXXX-XXXX"
-                      className="w-full bg-slate-950/60 border-2 border-white/5 group-hover:border-white/15 focus:border-blue-500 rounded-2xl pl-12 pr-6 py-4 font-mono text-sm tracking-widest focus:ring-4 ring-blue-500/10 outline-none transition-all placeholder:text-slate-600 text-center uppercase"
-                    />
-                    <Key
-                      size={18}
-                      className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within:text-blue-500 transition-colors"
-                    />
+                {loginType === "key" ? (
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black uppercase text-premium-400 tracking-widest pl-1">
+                      Trial License Key
+                    </label>
+                    <div className="relative group">
+                      <input
+                        type="text"
+                        value={trialKey}
+                        onChange={(e) => setTrialKey(e.target.value)}
+                        placeholder="NET-TRIAL-XXXX-XXXX"
+                        className="w-full bg-slate-950/60 border-2 border-white/5 group-hover:border-white/15 focus:border-blue-500 rounded-2xl pl-12 pr-6 py-4 font-mono text-sm tracking-widest focus:ring-4 ring-blue-500/10 outline-none transition-all placeholder:text-slate-600 text-center uppercase"
+                      />
+                      <Key
+                        size={18}
+                        className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within:text-blue-500 transition-colors"
+                      />
+                    </div>
                   </div>
-                </div>
+                ) : (
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black uppercase text-premium-400 tracking-widest pl-1">
+                        Username
+                      </label>
+                      <div className="relative group">
+                        <input
+                          type="text"
+                          value={username}
+                          onChange={(e) => setUsername(e.target.value)}
+                          placeholder="admin"
+                          className="w-full bg-slate-950/60 border-2 border-white/5 group-hover:border-white/15 focus:border-blue-500 rounded-2xl pl-12 pr-6 py-4 font-mono text-sm tracking-widest focus:ring-4 ring-blue-500/10 outline-none transition-all placeholder:text-slate-600"
+                        />
+                        <User
+                          size={18}
+                          className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within:text-blue-500 transition-colors"
+                        />
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black uppercase text-premium-400 tracking-widest pl-1">
+                        Password
+                      </label>
+                      <div className="relative group">
+                        <input
+                          type="password"
+                          value={password}
+                          onChange={(e) => setPassword(e.target.value)}
+                          placeholder="••••••••"
+                          className="w-full bg-slate-950/60 border-2 border-white/5 group-hover:border-white/15 focus:border-blue-500 rounded-2xl pl-12 pr-6 py-4 font-mono text-sm tracking-widest focus:ring-4 ring-blue-500/10 outline-none transition-all placeholder:text-slate-600"
+                        />
+                        <Lock
+                          size={18}
+                          className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within:text-blue-500 transition-colors"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                )}
 
                 <button
                   type="submit"

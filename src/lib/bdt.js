@@ -107,6 +107,7 @@ function validateGeneralData(ws) {
   };
 
   const siteCode = String(getVal("I5") || "").trim();
+  const siteName = String(getVal("C5") || "").trim() || siteCode || "Unknown";
   const rawDate = getVal("O4");
   const rawTime = getVal("O5");
 
@@ -148,7 +149,7 @@ function validateGeneralData(ws) {
     section: "General Data",
     range: "A4:Q6",
     siteCode,
-    siteName: siteCode || "Unknown",
+    siteName,
     batteryBrand: String(getVal("I41") || "").trim(),
     batteryVolt: String(getVal("I45") || "").trim(),
     batteryAH: String(getVal("I47") || "").trim(),
@@ -1012,6 +1013,7 @@ export function parseBDTFile(file, config = {}) {
             ignoreMostRules,
             summaryData: {
               siteCode: generalData.siteCode,
+              siteName: generalData.siteName,
               batteryBrand: generalData.batteryBrand,
               batteryVolt: generalData.batteryVolt,
               batteryAH: generalData.batteryAH,

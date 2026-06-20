@@ -130,7 +130,11 @@ const App = () => {
   const [siteList, setSiteList] = useState([]);
 
   // Environment detection: Bypass locks in Electron, enable in Web browser
-  const isElectron = typeof window !== 'undefined' && window.process && window.process.versions && window.process.versions.electron;
+  const isElectron =
+    typeof window !== "undefined" &&
+    window.process &&
+    window.process.versions &&
+    window.process.versions.electron;
 
   const [trialLockEnabled, setTrialLockEnabled] = useState(() => {
     if (isElectron) return false;
@@ -139,7 +143,7 @@ const App = () => {
   });
 
   const [isActivated, setIsActivated] = useState(() => {
-    const saved = localStorage.getItem("energy_review_activated");
+    const saved = sessionStorage.getItem("energy_review_activated");
     return saved !== null ? JSON.parse(saved) : false;
   });
   const [siteListLoading, setSiteListLoading] = useState(true);
@@ -194,6 +198,15 @@ const App = () => {
   const [bdtSearchQuery, setBdtSearchQuery] = useState("");
   const [bdtRuleFilter, setBdtRuleFilter] = useState("");
   const [bdtLoading, setBdtLoading] = useState(false);
+
+  // Clear activation session on window unload
+  useEffect(() => {
+    const clearSession = () => {
+      sessionStorage.removeItem("energy_review_activated");
+    };
+    window.addEventListener("beforeunload", clearSession);
+    return () => window.removeEventListener("beforeunload", clearSession);
+  }, []);
   const [bdtDragActive, setBdtDragActive] = useState(false);
   const [bdtSummaryDragActive, setBdtSummaryDragActive] = useState(false);
   const [oldSummaryDragActive, setOldSummaryDragActive] = useState(false);
@@ -967,6 +980,82 @@ const App = () => {
       console.error("Old Summary Upload Error:", err);
       alert("Old Summary Upload Error: " + err.message);
       setBdtLoading(false);
+    }
+  };
+
+  const handleGenerateBdtSummary = async () => {
+    if (bdtResults.length === 0) return;
+    setReportLoading(true);
+    try {
+      const reportData = [];
+
+      bdtResults.forEach((fileResult) => {
+        fileResult.sheets.forEach((sheet) => {
+          const sd = sheet.summaryData || {};
+          reportData.push({
+            "Short Code": sd.siteCode || "N/A",
+            "Site Name": sd.siteName || "N/A",
+            "Rectifier Brand": sd.rectifierBrand || "N/A",
+            "# of Modules": sd.numModules || "N/A",
+            "Battery Brand": sd.batteryBrand || "N/A",
+            "Battery Volt": sd.batteryVolt || "N/A",
+            "Battery Ampere Hour": sd.batteryAH || "N/A",
+            "No of String": sd.numStrings || "N/A",
+            "No of Batteries": sd.numBatteries || "N/A",
+            "Start Volt": sd.startVolt || "N/A",
+            "Start Amp": sd.startAmp || "N/A",
+            "Batteries Charging current limit": sd.chargingLimit || "N/A",
+            "End Volt": sd.endVolt || "N/A",
+            "End Amp": sd.endAmp || "N/A",
+            "Discharge time( Mins)": sd.dischargeTime || "N/A",
+          });
+        });
+      });
+
+      const newWb = new ExcelJS.Workbook();
+      const newWs = newWb.addWorksheet("BDT_Summary");
+
+      if (reportData.length > 0) {
+        const headers = Object.keys(reportData[0]);
+
+        newWs.addTable({
+          name: "BDTSummaryTable",
+          ref: "A1",
+          headerRow: true,
+          style: {
+            theme: "TableStyleMedium9",
+            showRowStripes: true,
+          },
+          columns: headers.map((h) => ({ name: h, filterButton: true })),
+          rows: reportData.map((dataRow) => headers.map((h) => dataRow[h])),
+        });
+
+        const headerRow = newWs.getRow(1);
+        headerRow.font = { bold: true, color: { argb: "FFFFFFFF" } };
+        headerRow.alignment = { vertical: "middle", horizontal: "center" };
+
+        newWs.columns.forEach((column) => {
+          column.width = 20;
+        });
+      }
+
+      const buffer = await newWb.xlsx.writeBuffer();
+      const blob = new Blob([buffer], {
+        type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `BDT_Summary_${new Date().toISOString().split("T")[0]}.xlsx`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error("Summary Generation Error:", err);
+      alert("Failed to generate BDT Summary: " + err.message);
+    } finally {
+      setReportLoading(false);
     }
   };
 
@@ -2545,21 +2634,31 @@ const App = () => {
                     Require Trial Key Activation
                   </span>
                   <span className="text-[10px] font-bold text-premium-400 leading-normal">
-                    When active, a secure trial screen will lock browser visitors until a valid trial key is entered. (Web version only)
+                    When active, a secure trial screen will lock browser
+                    visitors until a valid trial key is entered. (Web version
+                    only)
                   </span>
                 </div>
                 <button
                   onClick={() => {
                     const newState = !trialLockEnabled;
                     setTrialLockEnabled(newState);
-                    localStorage.setItem("energy_review_trial_lock_enabled", JSON.stringify(newState));
+                    localStorage.setItem(
+                      "energy_review_trial_lock_enabled",
+                      JSON.stringify(newState),
+                    );
                     if (!newState) {
                       setIsActivated(true);
-                      localStorage.setItem("energy_review_activated", JSON.stringify(true));
+                      sessionStorage.setItem(
+                        "energy_review_activated",
+                        JSON.stringify(true),
+                      );
                     }
                   }}
                   className={`w-16 h-8 rounded-full p-1 transition-all duration-300 relative focus:outline-none shrink-0 ${
-                    trialLockEnabled ? "bg-blue-600" : "bg-premium-300 dark:bg-premium-800"
+                    trialLockEnabled
+                      ? "bg-blue-600"
+                      : "bg-premium-300 dark:bg-premium-800"
                   }`}
                 >
                   <div
@@ -2586,9 +2685,13 @@ const App = () => {
                     Current instance licensing parameters.
                   </span>
                 </div>
-                <span className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest shrink-0 ${
-                  isActivated ? "bg-emerald-500/10 text-emerald-500" : "bg-amber-500/10 text-amber-500"
-                }`}>
+                <span
+                  className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest shrink-0 ${
+                    isActivated
+                      ? "bg-emerald-500/10 text-emerald-500"
+                      : "bg-amber-500/10 text-amber-500"
+                  }`}
+                >
                   {isActivated ? "Activated (Simulated)" : "Unactivated"}
                 </span>
               </div>
@@ -2596,9 +2699,13 @@ const App = () => {
                 <div className="pt-2">
                   <button
                     onClick={() => {
-                      if (window.confirm("Are you sure you want to deactivate and lock the software trial?")) {
+                      if (
+                        window.confirm(
+                          "Are you sure you want to deactivate and lock the software trial?",
+                        )
+                      ) {
                         setIsActivated(false);
-                        localStorage.removeItem("energy_review_activated");
+                        sessionStorage.removeItem("energy_review_activated");
                         alert("Software trial deactivated.");
                       }
                     }}
@@ -3233,8 +3340,8 @@ const App = () => {
       new Set(
         allSheets
           .filter((s) => (s.manualOverride || s.overallStatus) === "fail")
-          .flatMap((s) => s.allIssues.map(getShortIssueText))
-      )
+          .flatMap((s) => s.allIssues.map(getShortIssueText)),
+      ),
     ).sort();
     const passCount = allSheets.filter(
       (s) => (s.manualOverride || s.overallStatus) === "pass",
@@ -3272,12 +3379,6 @@ const App = () => {
               )}
             </p>
             <div className="flex gap-3 mt-6">
-              <button
-                onClick={() => setActiveTab("settings")}
-                className="flex items-center gap-2 px-6 py-2.5 bg-indigo-500/10 text-indigo-600 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-indigo-500 hover:text-white transition-all"
-              >
-                <Settings size={14} /> Rules Settings
-              </button>
               <button
                 onClick={() => {
                   setBdtResults([]);
@@ -3331,6 +3432,18 @@ const App = () => {
                   Generate BDT Report
                 </div>
               </label>
+              <button
+                onClick={handleGenerateBdtSummary}
+                disabled={bdtResults.length === 0 || reportLoading}
+                className={`flex items-center gap-2 px-6 py-2.5 bg-blue-500/10 text-blue-600 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-blue-500 hover:text-white transition-all ${bdtResults.length === 0 ? "opacity-50 cursor-not-allowed" : ""}`}
+              >
+                {reportLoading ? (
+                  <RefreshCw size={14} className="animate-spin" />
+                ) : (
+                  <Download size={14} />
+                )}
+                Generate BDT Summary
+              </button>
             </div>
           </div>
 
@@ -3578,7 +3691,9 @@ const App = () => {
             </div>
 
             {/* Clear Filters Button */}
-            {(bdtSearchQuery.trim() !== "" || bdtRuleFilter !== "" || bdtStatusFilter !== null) && (
+            {(bdtSearchQuery.trim() !== "" ||
+              bdtRuleFilter !== "" ||
+              bdtStatusFilter !== null) && (
               <button
                 onClick={() => {
                   setBdtSearchQuery("");
@@ -3662,32 +3777,55 @@ const App = () => {
             // 1. Status Filter
             if (bdtStatusFilter) {
               const effective = s.manualOverride || s.overallStatus;
-              if (bdtStatusFilter === "pass" && effective !== "pass") return false;
-              if (bdtStatusFilter === "warning" && (s.manualOverride || s.overallStatus !== "warning")) return false;
-              if (bdtStatusFilter === "fail" && effective !== "fail") return false;
+              if (bdtStatusFilter === "pass" && effective !== "pass")
+                return false;
+              if (
+                bdtStatusFilter === "warning" &&
+                (s.manualOverride || s.overallStatus !== "warning")
+              )
+                return false;
+              if (bdtStatusFilter === "fail" && effective !== "fail")
+                return false;
             }
 
             // 2. Search query filter
             if (bdtSearchQuery.trim()) {
               const query = bdtSearchQuery.toLowerCase();
-              const matchesSiteName = s.siteName && s.siteName.toLowerCase().includes(query);
-              const matchesSheetName = s.sheetName && s.sheetName.toLowerCase().includes(query);
-              const matchesSiteCode = s.summaryData?.siteCode && String(s.summaryData.siteCode).toLowerCase().includes(query);
-              
-              const matchesIssues = s.allIssues && s.allIssues.some((iss) => {
-                return (iss.text && iss.text.toLowerCase().includes(query)) ||
-                       (iss.section && iss.section.toLowerCase().includes(query)) ||
-                       getShortIssueText(iss).toLowerCase().includes(query);
-              });
-              
-              if (!matchesSiteName && !matchesSheetName && !matchesSiteCode && !matchesIssues) return false;
+              const matchesSiteName =
+                s.siteName && s.siteName.toLowerCase().includes(query);
+              const matchesSheetName =
+                s.sheetName && s.sheetName.toLowerCase().includes(query);
+              const matchesSiteCode =
+                s.summaryData?.siteCode &&
+                String(s.summaryData.siteCode).toLowerCase().includes(query);
+
+              const matchesIssues =
+                s.allIssues &&
+                s.allIssues.some((iss) => {
+                  return (
+                    (iss.text && iss.text.toLowerCase().includes(query)) ||
+                    (iss.section &&
+                      iss.section.toLowerCase().includes(query)) ||
+                    getShortIssueText(iss).toLowerCase().includes(query)
+                  );
+                });
+
+              if (
+                !matchesSiteName &&
+                !matchesSheetName &&
+                !matchesSiteCode &&
+                !matchesIssues
+              )
+                return false;
             }
 
             // 3. Rejection Rule Filter
             if (bdtRuleFilter) {
-              const matchesRule = s.allIssues && s.allIssues.some((iss) => {
-                return getShortIssueText(iss) === bdtRuleFilter;
-              });
+              const matchesRule =
+                s.allIssues &&
+                s.allIssues.some((iss) => {
+                  return getShortIssueText(iss) === bdtRuleFilter;
+                });
               if (!matchesRule) return false;
             }
 
@@ -4059,7 +4197,10 @@ const App = () => {
       <TrialActivation
         onActivate={() => {
           setIsActivated(true);
-          localStorage.setItem("energy_review_activated", JSON.stringify(true));
+          sessionStorage.setItem(
+            "energy_review_activated",
+            JSON.stringify(true),
+          );
         }}
         trialLockEnabled={trialLockEnabled}
         setTrialLockEnabled={setTrialLockEnabled}
