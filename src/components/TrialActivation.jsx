@@ -52,8 +52,10 @@ export default function TrialActivation({
         return;
       }
       const cleanKey = trialKey.trim().toUpperCase();
-      const isValid = authData.validKeys.some(k => k.toUpperCase() === cleanKey);
-      
+      const isValid = authData.validKeys.some(
+        (k) => k.toUpperCase() === cleanKey,
+      );
+
       if (isValid || /^NET-TRIAL-[A-Z0-9]{4}-[A-Z0-9]{4}$/.test(cleanKey)) {
         setError("");
         onActivate();
@@ -65,7 +67,9 @@ export default function TrialActivation({
         setError("Please enter username and password.");
         return;
       }
-      const user = authData.users.find(u => u.username === username && u.password === password);
+      const user = authData.users.find(
+        (u) => u.username === username && u.password === password,
+      );
       if (user) {
         setError("");
         onActivate();
@@ -506,41 +510,6 @@ export default function TrialActivation({
               </div>
             </div>
           )}
-        </div>
-
-        {/* DEVELOPER BYPASS CONTROLS badge at bottom */}
-        <div className="mt-8 flex justify-center animate-fade-in">
-          <div className="bg-slate-900/60 border border-white/10 rounded-full px-6 py-3 flex items-center gap-4 text-xs font-bold text-premium-300 shadow-xl backdrop-blur-md">
-            <span className="flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-indigo-500 animate-pulse" />
-              Dev Switch (Web Mode)
-            </span>
-            <div className="h-4 w-[1px] bg-white/10" />
-            <button
-              onClick={() => {
-                const newState = !trialLockEnabled;
-                setTrialLockEnabled(newState);
-                localStorage.setItem(
-                  "energy_review_trial_lock_enabled",
-                  JSON.stringify(newState),
-                );
-                if (!newState) {
-                  // Reload or trigger instant callback bypass
-                  onActivate();
-                }
-              }}
-              className="bg-indigo-600/20 text-indigo-300 hover:bg-indigo-600/40 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest transition-all"
-            >
-              Toggle Lock:{" "}
-              <span
-                className={
-                  trialLockEnabled ? "text-rose-400" : "text-emerald-400"
-                }
-              >
-                {trialLockEnabled ? "ACTIVE" : "BYPASSED"}
-              </span>
-            </button>
-          </div>
         </div>
       </div>
     </div>
