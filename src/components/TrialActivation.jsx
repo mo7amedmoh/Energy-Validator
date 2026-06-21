@@ -259,17 +259,6 @@ export default function TrialActivation({
                 </button>
               </form>
 
-              {/* Info Tips Section */}
-              <div className="bg-blue-500/5 border border-blue-500/10 rounded-2xl p-5 text-xs text-blue-300 leading-relaxed">
-                <div className="flex items-center gap-2 mb-2 font-black uppercase tracking-wider text-[10px] text-blue-400">
-                  <Zap size={12} /> Sandbox Activation Code
-                </div>
-                Use master evaluation key{" "}
-                <code className="bg-blue-950/80 px-2 py-0.5 rounded text-white font-mono font-bold text-sm tracking-wider mx-1 select-all border border-blue-800/30">
-                  NET-TRIAL-2026
-                </code>{" "}
-                for instant, zero-delay review of features.
-              </div>
 
               {/* Link to Request form */}
               <div className="text-center pt-2">
