@@ -155,8 +155,7 @@ export default function TrialActivation({
                   Activation
                 </h3>
                 <p className="text-sm text-premium-400 font-medium">
-                  Enter your 16-character trial license key to unlock deep
-                  energy diagnostics, alarms audit, and mismatch correlation.
+                  Enter your license key to unlock all features.
                 </p>
               </div>
 
@@ -258,7 +257,6 @@ export default function TrialActivation({
                   Unlock Software <ArrowRight size={16} />
                 </button>
               </form>
-
 
               {/* Link to Request form */}
               <div className="text-center pt-2">
