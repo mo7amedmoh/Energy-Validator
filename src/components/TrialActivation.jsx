@@ -285,8 +285,7 @@ export default function TrialActivation({
                   Request Evaluation Key
                 </h3>
                 <p className="text-sm text-premium-400 font-medium">
-                  Submit a trial request to generate a temporary, custom
-                  pre-authorized activation code.
+                  Submit a trial request.
                 </p>
               </div>
 
